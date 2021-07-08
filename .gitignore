@@ -1,1 +1,2 @@
 server/*.pickle
+**/__pycache__/*
