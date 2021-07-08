@@ -1,0 +1,15 @@
+Streamlit (thank god) handles multiple users pretty well... https://github.com/streamlit/streamlit/issues/1960
+
+It looks like I can deploy the streamlit package to something hyper-scalable.
+There could be a big issue if for some reason or another I cannot scale this thing...
+On the other hand, there shouldn't be that intense of server demand on this thing... Right?
+If everything is precomputed, instead of computing & pushing to hard disk on demand...
+
+I should be able to test a "burst" of hundreds of users at once, 
+    to make sure I can handle such a surge *without* losing users... 
+
+Fargate: https://aws.amazon.com/fargate/
+SL on fargate: https://discuss.streamlit.io/t/deploy-your-streamlit-app-at-scale-to-aws-fargate-using-aws-cdk/3185
+    and here: https://github.com/nicolasmetallo/deploy-streamlit-on-fargate-with-aws-cdk
+
+This seems like a useful, reproducible skill as well.
