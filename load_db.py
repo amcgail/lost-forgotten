@@ -1,6 +1,6 @@
 from knowknow import *
 
-db = Dataset('sociology-wos-74b')
+db = Dataset('10.7910/DVN/GQGJLQ') # sociology-wos-74b
 
 db.groupings.append([
     'c', {
