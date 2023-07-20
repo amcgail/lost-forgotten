@@ -74,3 +74,14 @@ def footer():
         link("https://www.patreon.com/studyingpeople", image('https://i.imgur.com/thJhzOO.png')),
     ]
     layout(*myargs)
+
+    import streamlit.components.v1 as components
+    components.html("""<!-- Global site tag (gtag.js) - Google Analytics -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-0H6C8S168W"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-0H6C8S168W');
+</script>""")

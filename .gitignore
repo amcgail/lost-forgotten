@@ -1,3 +1,4 @@
 server/*.pickle
 **/__pycache__/*
 **/.ipynb_checkpoints/*
+**/.DS_STORE

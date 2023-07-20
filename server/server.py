@@ -4,16 +4,17 @@ import streamlit as st
 from load_db import db
 
 dbs = [
-    ("Sociology (WoS; McGail 2021; filtered, grouped)", db),
-    ("Sociology (WoS; McGail 2021; pre-[filter, group])", Dataset('sociology-wos-74a')),
-    ("Sociology (WoS; full unfiltered db)", Dataset('sociology-wos-all')),
-    ("Sociology (WoS; self-citations removed)", Dataset('sociology-wos-74b-noself')),
+    ("Sociology (WoS; as in McGail 2021)", db),
+    #("Sociology (WoS; full unfiltered db)", Dataset('sociology-wos-all')),
+    #("Sociology (WoS; self-citations removed)", Dataset('sociology-wos-74b-noself')),
 ]
 names = [x[0] for x in dbs]
 dbs = [x[1] for x in dbs]
 
 
-db_sel = st.sidebar.selectbox("Choose your dataset!", range(len(dbs)), format_func=lambda x:names[x] )
+st.sidebar.markdown("""All code for replication and extension of these results are available [on GitHub](https://github.com/amcgail/lost-forgotten). You can find the paper which spawned this interface [in *The American Sociologist*](https://link.springer.com/article/10.1007/s12108-021-09490-4).""")
+
+db_sel = st.sidebar.selectbox("Choose your dataset (more to be added soon).", range(len(dbs)), format_func=lambda x:names[x] )
 db = dbs[db_sel]
 
 def get_table_download_link(df):
@@ -26,7 +27,7 @@ def get_table_download_link(df):
 
 def top_app():
     dta = Dataset('sociology-wos-74b')
-    
+
     st.markdown("""
     # top cited works of all time
     """)
@@ -35,7 +36,7 @@ def top_app():
         "Top N in each decade",
         "Top % in each decade",
     ]
-    
+
     typ = st.sidebar.selectbox("How to determine the top?", typ_o)
     yStart = st.sidebar.selectbox("How early to include?", [1900, 1940, 1970], index=1)
     if typ == typ_o[0]:
@@ -57,14 +58,14 @@ def top_app():
         This method takes the top documents by percentile in each decade, rolling through the start (you have {yStart} - {yStart+10} selected) to 2005-2015.
         It eliminates duplicates, and records the date in which each work first appeared in the top % list, along with various other attributes of the cited work.
         """
-    
-    
+
+
     #srt = st.sidebar.selectbox
-    
+
     import pickle
-    
+
     topf = Path("top_df_%s.pickle" % str(args))
-    
+
     if topf.exists():
         with topf.open('rb') as inf:
             top_df = pickle.load(inf)
@@ -74,7 +75,7 @@ def top_app():
         loading_state.text('Done...')
         with topf.open('wb') as outf:
             pickle.dump(top_df, outf)
-    
+
     tops = Counter([x.split("|")[0] for x in top_df['name']]).most_common(30)
     tops_c = Counter([x[1] for x in tops])
     top_a_n = max(tops_c)
@@ -95,7 +96,7 @@ def top_app():
 
 
 def author_app():
-    
+
     N_pubs = st.sidebar.selectbox("Show top N publications", [20,50,100])
 
     def key2name(tname, truncate=None):
@@ -120,10 +121,10 @@ def author_app():
         if limit is not None:
             pubs = pubs[:limit]
 
-        viz.yearly_counts_table(db, 
-            pubs, 
-            NCOLS=2, 
-            yearlim=(1950,2015), 
+        viz.yearly_counts_table(db,
+            pubs,
+            NCOLS=2,
+            yearlim=(1950,2015),
             tickstep=20,
             print_names={
                 x: key2name(x)#"%s\n%s".join( x.split("|")[1:] )[:30] + "..."
@@ -155,7 +156,7 @@ def author_app():
 
     def display_auth(WHO):
 
-        
+
         st.markdown(f"# {WHO}")
         st.write("## top cited works")
         st.write( author_fig(WHO, limit=N_pubs, db_i=db_sel) )
@@ -178,12 +179,10 @@ def author_app():
 
             display_auth(a)
 
-            
-            
+
+
 def data_app():
 
-    cy = db.by('fy').cits
-    dy = db.by('fy').docs
     cc = db.by('c').cits
 
     num1 = sum([1 for x,c in cc.items() if c == 1])
@@ -196,77 +195,31 @@ def data_app():
 
     ys = [x[0] for x in db.by('fy').cits.keys()]
 
-    "# summary statistics"
-    f"""
+    f"""# summary statistics
+
     + {len(db.by('fj').cits):,} journals
-    + {sum(cc.values()):,} citations total
-    + {sum(dy.values()):,} citing books and articles
+    + {len(db.by('ta').cits):,} cited authors
+    + {len(db.by('fa').cits):,} citing authors
     + {total:,} cited books and articles
-        + {num1:,} with 1 citation 
-        + {num2:,} with 2-4 citations 
+        + {num1:,} with 1 citation
+        + {num2:,} with 2-4 citations
         + {num3:,} with 5-15 citations
         + {num4:,} with 15-100 citations
         + {num5:,} with 100+ citations
     + {max(ys)-min(ys)+1:,} years of citations
     """
 
-    if 'ta' in db.cnt_keys():
-        f"""
-        + {len(db.by('ta').cits):,} cited authors
-        + {len(db.by('fa').cits):,} citing authors
-        """
-
+    c = db.by('fy').cits
     yrs = range(1900,2010,1)
-    vals = np.log10([cy[(y,)] for y in yrs])
-    plt.plot(yrs, vals);
-    plt.title('# citations per year')
-    top = int( np.ceil( np.max( vals ) ) )
-    tks = range(1, top)
-    plt.yticks(
-        tks, [np.power(10,x) for x in tks]
-    )
+    plt.plot(yrs, np.log([c[(y,)] for y in yrs]));
+    plt.title('Log(# citations) by year')
     st.write(plt.gcf())
-
-    "# journal summary"
-
-    cj = db.by('fj').cits
-    dj = db.by('fj').docs
-
-    jdf = db(fj=None).cits
-    jdf['doc'] = [ dj[(x,)] for x in jdf.fj ]
-    jdf['cit/doc'] = jdf['count'] / jdf['doc']
-    jdf['first'] = [db.trend('fj', j).first for j in jdf.fj ]
-    st.dataframe( jdf )
-
-    top_per = max(db.items('fj'), key=lambda x:cj[(x,)]/dj[(x,)])
-    bot_per = min(db.items('fj'), key=lambda x:cj[(x,)]/dj[(x,)])
-
-    st_ave = db(fj=top_per).cits / db(fj=top_per).docs
-    soc_ave = db(fj=bot_per).cits / db(fj=bot_per).docs
-
-    top5 = sorted( db.items('fj'), key=lambda x: -db(fj=x).cits )[:5]
-
-    top5str = ["*{}* ({})".format(x.title(), db(fj=x).cits) for x in top5]
-    top5str = ", ".join(top5str[:-1]) + ", and " + top5str[-1]
-    top5prop = sum( db(fj=x).cits for x in top5 ) / sum( db(fj=x).cits for x in db.items('fj') )
-    top5propd = sum( db(fj=x).docs for x in top5 ) / sum( db(fj=x).docs for x in db.items('fj') )
-
-    #d2015 = db(fj=None, fy=2015).docs
-    #top_2015 = max(d2015, key=lambda x:d2015)
-
-    st.markdown(f"""
-    {top_per.title()} produces the most citations per article, at {st_ave:0.1f}. 
-    Meanwhile {bot_per.title()} produces just {soc_ave:0.1f} citations per article. 
-    
-    Web of Science provides the most citations for the journals {top5str}. 
-    Together these five journals comprise {top5prop:0.0%} of all citations ({top5propd:0.0%} of documents) in this dataset.
-    """)
 
 apps = [
     {
         'title': 'Search Authors',
         'function': author_app
-    }, 
+    },
     {
         'title': 'Dataset summary',
         'function': data_app
@@ -276,7 +229,7 @@ apps = [
         'function': top_app
     }
 ]
-            
+
 app = st.sidebar.radio(
             'Go To',
             apps,
